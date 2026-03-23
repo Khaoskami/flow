@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AgeGate Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav__inner">
+            <span class="nav__brand">AgeGate Dashboard</span>
+            <div class="nav__links">
+                {% if guild %}
+                    <a href="/dashboard" class="nav__link">Dashboard</a>
+                    <a href="/dashboard/search" class="nav__link">Search</a>
+                    <span class="nav__link" style="color: var(--text-muted)">{{ guild.guild_name }}</span>
+                    <a href="/logout" class="nav__link">Logout</a>
+                {% else %}
+                    <a href="/" class="nav__link">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="layout" style="padding-top: 2rem; padding-bottom: 2rem;">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        AgeGate Verification System &mdash; Dashboard v1.0
+    </footer>
+</body>
+</html>

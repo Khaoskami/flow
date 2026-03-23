@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — AgeGate{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 1.5rem;">Dashboard</h1>
+
+<div class="stats">
+    <div class="stats__card">
+        <div class="stats__value">{{ stats.total_verified }}</div>
+        <div class="stats__label">Verified Members</div>
+    </div>
+    <div class="stats__card">
+        <div class="stats__value">{{ stats.with_agreement }}</div>
+        <div class="stats__label">Signed Agreements</div>
+    </div>
+    <div class="stats__card">
+        <div class="stats__value">
+            {% if stats.total_verified > 0 %}
+                {{ "%.0f" | format(stats.with_agreement / stats.total_verified * 100) }}%
+            {% else %}
+                0%
+            {% endif %}
+        </div>
+        <div class="stats__label">Completion Rate</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="card__title">Recent Members</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>User ID</th>
+                    <th>Age</th>
+                    <th>Verified</th>
+                    <th>Agreement</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in members %}
+                <tr>
+                    <td>
+                        <a href="/dashboard/user/{{ member.user_id }}">
+                            {{ member.guild_name if member.user_name is not defined else member.user_name }}
+                        </a>
+                    </td>
+                    <td>{{ member.user_id }}</td>
+                    <td>{{ member.age_detected or "—" }}</td>
+                    <td>{{ member.verified_at[:10] if member.verified_at else "—" }}</td>
+                    <td>
+                        {% if member.agreement_id %}
+                            <a href="/dashboard/agreement/{{ member.agreement_id }}">
+                                <span class="badge badge--green">Signed</span>
+                            </a>
+                        {% else %}
+                            <span class="badge badge--amber">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not members %}
+                <tr><td colspan="5" style="text-align:center; color:var(--text-muted)">No members yet</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="card__title">Recent Audit Log</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Action</th>
+                    <th>User ID</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in audit_log %}
+                <tr>
+                    <td>{{ entry.timestamp[:16] }}</td>
+                    <td><span class="badge badge--blue">{{ entry.action }}</span></td>
+                    <td>{{ entry.user_id or "—" }}</td>
+                    <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {{ entry.details or "—" }}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not audit_log %}
+                <tr><td colspan="4" style="text-align:center; color:var(--text-muted)">No entries</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="card__title">API Reference</h2>
+    <p style="color:var(--text-secondary); margin-bottom:1rem;">
+        Use your API key in the <code>X-API-Key</code> header.
+    </p>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>GET</td><td><code>/api/v1/status</code></td><td>Service status</td></tr>
+                <tr><td>GET</td><td><code>/api/v1/user/{user_id}</code></td><td>Full user record</td></tr>
+                <tr><td>GET</td><td><code>/api/v1/agreement/{id}</code></td><td>Agreement details</td></tr>
+                <tr><td>GET</td><td><code>/api/v1/guild/members</code></td><td>Guild member list</td></tr>
+                <tr><td>GET</td><td><code>/api/v1/guild/stats</code></td><td>Guild statistics</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

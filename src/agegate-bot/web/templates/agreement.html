@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Agreement {{ agreement.agreement_id }} — AgeGate Dashboard{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 1.5rem;">Signed Agreement</h1>
+
+<div class="card">
+    <div class="fields" style="margin-bottom: 1.5rem;">
+        <div>
+            <div class="field__label">Agreement ID</div>
+            <div class="field__value">{{ agreement.agreement_id }}</div>
+        </div>
+        <div>
+            <div class="field__label">User</div>
+            <div class="field__value">
+                <a href="/dashboard/user/{{ agreement.user_id }}">
+                    {{ agreement.user_name }} ({{ agreement.user_id }})
+                </a>
+            </div>
+        </div>
+        <div>
+            <div class="field__label">Signed At</div>
+            <div class="field__value">{{ agreement.signed_at[:19] }}</div>
+        </div>
+        <div>
+            <div class="field__label">Version</div>
+            <div class="field__value">{{ agreement.version }}</div>
+        </div>
+        <div>
+            <div class="field__label">Status</div>
+            <div class="field__value">
+                {% if agreement.revoked %}
+                    <span class="badge badge--red">Revoked</span>
+                {% else %}
+                    <span class="badge badge--green">Active</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 class="card__title" style="margin-bottom: 0;">Document Text</h2>
+        <button class="btn btn--ghost" onclick="copyDocument()" id="copy-btn">
+            Copy to Clipboard
+        </button>
+    </div>
+    <div class="document" id="document-text">{{ agreement.document_text }}</div>
+</div>
+
+<div class="card">
+    <h2 class="card__title">Integrity Verification</h2>
+    <div class="fields">
+        <div style="grid-column: 1 / -1;">
+            <div class="field__label">SHA-256 Document Hash</div>
+            <div class="field__value" style="font-family: 'Courier New', monospace; font-size: 0.85rem; word-break: break-all;">
+                {{ agreement.document_hash }}
+            </div>
+        </div>
+    </div>
+    <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 1rem;">
+        To verify integrity, compute the SHA-256 hash of the document text above.
+        If it matches the hash shown, the document has not been altered since signing.
+    </p>
+</div>
+
+<script>
+function copyDocument() {
+    const text = document.getElementById('document-text').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy to Clipboard'; }, 2000);
+    });
+}
+</script>
+{% endblock %}
