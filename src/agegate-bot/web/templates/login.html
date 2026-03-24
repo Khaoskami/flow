@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Login — AgeGate Dashboard{% endblock %}
+{% block content %}
+<div class="form">
+    <div class="card">
+        <h2 class="card__title">Dashboard Login</h2>
+        {% if error %}
+        <p style="color: var(--red); margin-bottom: 1rem;">{{ error }}</p>
+        {% endif %}
+        <form method="POST" action="/login">
+            <div class="form__group">
+                <label class="form__label" for="api_key">API Key</label>
+                <input class="form__input" type="password" id="api_key"
+                       name="api_key" placeholder="ag_..." required>
+            </div>
+            <button class="btn btn--primary" type="submit" style="width:100%">
+                Log In
+            </button>
+        </form>
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 1rem;">
+            Get your API key by running <code>/get-api-key</code> in your Discord server.
+        </p>
+    </div>
+</div>
+{% endblock %}

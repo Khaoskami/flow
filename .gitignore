@@ -153,6 +153,9 @@ hive-mind-prompt-*.txt
 # Codex local configuration
 .codex/
 
+# AgeGate runtime data
+src/agegate-bot/data/
+
 # Claude Flow runtime data
 .claude-flow/data/
 .claude-flow/logs/

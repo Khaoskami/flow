@@ -1,0 +1,28 @@
+# Environment
+.env
+*.env
+
+# Data (runtime-generated)
+data/
+*.db
+*.enc
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

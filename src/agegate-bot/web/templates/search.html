@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Search — AgeGate Dashboard{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 1.5rem;">Search</h1>
+
+<form method="GET" action="/dashboard/search" class="search">
+    <input class="search__input" type="text" name="q"
+           placeholder="Search by User ID, username, or Agreement ID…"
+           value="{{ query or '' }}">
+    <button class="btn btn--primary" type="submit">Search</button>
+</form>
+
+{% if results is not none %}
+<div class="card">
+    <h2 class="card__title">
+        Results
+        {% if results %}({{ results | length }}){% endif %}
+    </h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>User ID</th>
+                    <th>Age</th>
+                    <th>Verified</th>
+                    <th>Agreement</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in results %}
+                <tr>
+                    <td>
+                        <a href="/dashboard/user/{{ user.user_id }}">
+                            {{ user.user_name }}
+                        </a>
+                    </td>
+                    <td>{{ user.user_id }}</td>
+                    <td>{{ user.age_detected or "—" }}</td>
+                    <td>{{ user.verified_at[:10] if user.verified_at else "—" }}</td>
+                    <td>
+                        {% if user.agreement_id %}
+                            <a href="/dashboard/agreement/{{ user.agreement_id }}">
+                                <span class="badge badge--green">{{ user.agreement_id }}</span>
+                            </a>
+                        {% else %}
+                            <span class="badge badge--amber">None</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not results %}
+                <tr>
+                    <td colspan="5" style="text-align:center; color:var(--text-muted)">
+                        No results found for "{{ query }}"
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
