@@ -475,7 +475,12 @@ class VerificationCog(commands.Cog, name="Verification"):
         if not guild:
             return
 
-        # Register guild
+        # Acknowledge the interaction immediately (must be within 3 seconds)
+        await interaction.response.send_message(
+            "✅ Verification panel deployed!", ephemeral=True
+        )
+
+        # Register guild (async DB work — safe now that interaction is acknowledged)
         await self.bot.database.register_guild(
             guild.id, guild.name, guild.owner_id
         )
@@ -500,9 +505,6 @@ class VerificationCog(commands.Cog, name="Verification"):
         embed.set_footer(text=f"Powered by AgeGate | {config.org_name}")
 
         await interaction.channel.send(embed=embed, view=VerifyButton())
-        await interaction.response.send_message(
-            "✅ Verification panel deployed!", ephemeral=True
-        )
 
         await self.bot.database.add_audit_entry(
             "PANEL_DEPLOYED", actor_id=interaction.user.id,
@@ -517,12 +519,14 @@ class VerificationCog(commands.Cog, name="Verification"):
     async def verify_status(
         self, interaction: discord.Interaction, user: discord.User
     ) -> None:
+        await interaction.response.defer(ephemeral=True)
+
         verification = await self.bot.database.get_verification(user.id)
         agreement = await self.bot.database.get_agreement(user.id)
         guilds = await self.bot.database.get_user_guilds(user.id)
 
         if not verification:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"❌ {user.mention} has not been verified.", ephemeral=True
             )
             return
@@ -550,7 +554,7 @@ class VerificationCog(commands.Cog, name="Verification"):
                 name=f"Servers ({len(guilds)})", value=guild_list, inline=False
             )
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(
         name="verify-stats",
@@ -561,6 +565,8 @@ class VerificationCog(commands.Cog, name="Verification"):
         guild = interaction.guild
         if not guild:
             return
+
+        await interaction.response.defer(ephemeral=True)
 
         local = await self.bot.database.get_guild_stats(guild.id)
         global_stats = await self.bot.database.get_global_stats()
@@ -581,7 +587,7 @@ class VerificationCog(commands.Cog, name="Verification"):
                 f"Servers: {global_stats['total_guilds']}"
             ),
         )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
 
 async def setup(bot: AgeGateBot) -> None:

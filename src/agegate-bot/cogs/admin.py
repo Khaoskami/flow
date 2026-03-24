@@ -33,13 +33,15 @@ class AdminCog(commands.Cog, name="Admin"):
         if not guild:
             return
 
+        await interaction.response.defer(ephemeral=True)
+
         settings = await self.bot.database.get_guild_settings(guild.id)
         if not settings:
             api_key = await self.bot.database.register_guild(
                 guild.id, guild.name, guild.owner_id
             )
             if not api_key:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     "❌ Could not generate API key.", ephemeral=True
                 )
                 return
@@ -61,7 +63,7 @@ class AdminCog(commands.Cog, name="Admin"):
             color=0x5865F2,
         )
         embed.set_footer(text="Use /regen-api-key to rotate this key")
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(
         name="regen-api-key",
@@ -72,6 +74,8 @@ class AdminCog(commands.Cog, name="Admin"):
         guild = interaction.guild
         if not guild:
             return
+
+        await interaction.response.defer(ephemeral=True)
 
         new_key = await self.bot.database.regenerate_api_key(guild.id)
 
@@ -90,7 +94,7 @@ class AdminCog(commands.Cog, name="Admin"):
             ),
             color=0x57F287,
         )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     # ── View Agreement ─────────────────────────────────────────
 
@@ -102,9 +106,11 @@ class AdminCog(commands.Cog, name="Admin"):
     async def view_agreement(
         self, interaction: discord.Interaction, user: discord.User
     ) -> None:
+        await interaction.response.defer(ephemeral=True)
+
         agreement = await self.bot.database.get_agreement(user.id)
         if not agreement:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"❌ {user.mention} has not signed a consent agreement.",
                 ephemeral=True,
             )
@@ -128,7 +134,7 @@ class AdminCog(commands.Cog, name="Admin"):
                 name="Revoked At", value=agreement.get("revoked_at", "N/A")[:19]
             )
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     # ── Audit Log ──────────────────────────────────────────────
 
@@ -142,9 +148,11 @@ class AdminCog(commands.Cog, name="Admin"):
         if not guild:
             return
 
+        await interaction.response.defer(ephemeral=True)
+
         entries = await self.bot.database.get_audit_log(guild.id, limit=15)
         if not entries:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "📋 No audit log entries found.", ephemeral=True
             )
             return
@@ -165,7 +173,7 @@ class AdminCog(commands.Cog, name="Admin"):
             color=0x5865F2,
         )
         embed.set_footer(text=f"Showing last {len(entries)} entries")
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     # ── User Management ────────────────────────────────────────
 
@@ -181,10 +189,12 @@ class AdminCog(commands.Cog, name="Admin"):
         if not guild:
             return
 
+        await interaction.response.defer(ephemeral=True)
+
         config = self.bot.app_config
 
         # Remove guild membership
-        removed = await self.bot.database.remove_guild_member(user.id, guild.id)
+        await self.bot.database.remove_guild_member(user.id, guild.id)
 
         # Revoke agreement
         await self.bot.database.revoke_agreement(user.id)
@@ -212,7 +222,7 @@ class AdminCog(commands.Cog, name="Admin"):
             details=f"Unverified by {interaction.user.name}",
         )
 
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"✅ {user.mention} has been unverified and their agreement revoked.",
             ephemeral=True,
         )
@@ -228,6 +238,8 @@ class AdminCog(commands.Cog, name="Admin"):
         guild = interaction.guild
         if not guild:
             return
+
+        await interaction.response.defer(ephemeral=True)
 
         # Delete verification temp records
         verification = await self.bot.database.get_verification(user.id)
@@ -256,7 +268,7 @@ class AdminCog(commands.Cog, name="Admin"):
                 except discord.Forbidden:
                     pass
 
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"🗑️ All data for {user.mention} has been permanently deleted.",
             ephemeral=True,
         )
@@ -267,6 +279,8 @@ class AdminCog(commands.Cog, name="Admin"):
     )
     @app_commands.checks.has_permissions(administrator=True)
     async def force_purge(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True)
+
         deleted = self.bot.storage_manager.purge_expired()
 
         await self.bot.database.add_audit_entry(
@@ -276,7 +290,7 @@ class AdminCog(commands.Cog, name="Admin"):
             details=f"Deleted {deleted} expired temp records",
         )
 
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"🧹 Purged {deleted} expired temporary record(s).",
             ephemeral=True,
         )
