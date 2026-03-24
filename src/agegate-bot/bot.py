@@ -1,34 +1,26 @@
-"""AgeGate Bot — Entry point.
-
-Starts the Discord bot and web dashboard in a single process.
-"""
+"""AgeGate — Entry point. Starts the Discord bot and FastAPI web dashboard."""
 
 from __future__ import annotations
 
-import asyncio
 import logging
-import os
-import sys
 import threading
-from pathlib import Path
 
 import discord
+import uvicorn
 from discord.ext import commands, tasks
 
-# Ensure the project root is on sys.path so cogs/ and utils/ are importable
-sys.path.insert(0, str(Path(__file__).parent))
+from utils import Config, Database, ImageAnalyzer, StorageManager, FieldEncryptor
+from web import create_app
 
-from utils.config import Config
-from utils.database import Database
-from utils.image_analyzer import ImageAnalyzer
-from utils.storage_manager import StorageManager
-
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 log = logging.getLogger("agegate")
 
 
 class AgeGateBot(commands.Bot):
-    """Main bot class with shared resources."""
-
     def __init__(self, config: Config) -> None:
         intents = discord.Intents.default()
         intents.message_content = True
@@ -41,133 +33,102 @@ class AgeGateBot(commands.Bot):
         )
 
         self.app_config = config
-        self.database = Database(config.data_dir / "agegate.db")
+        self.database = Database(field_encryptor=FieldEncryptor(config.encryption_key))
+        self.image_analyzer = ImageAnalyzer(
+            tamper_threshold=config.tamper_threshold,
+            ocr_confidence=config.ocr_confidence,
+            min_age=config.min_age,
+        )
         self.storage_manager = StorageManager(
-            storage_dir=config.data_dir / "verifications",
             encryption_key=config.encryption_key,
             retention_hours=config.retention_hours,
         )
-        self.image_analyzer = ImageAnalyzer(
-            tamper_threshold=config.tamper_threshold,
-            ocr_confidence_min=config.ocr_confidence,
-            min_age=config.min_age,
-        )
 
     async def setup_hook(self) -> None:
-        """Called when the bot is starting up."""
-        # Initialize database
-        await self.database.init_db()
-        log.info("Database initialized at %s", self.database.db_path)
+        # Connect database
+        await self.database.connect()
+        log.info("Database connected")
+
+        # Load cogs
+        await self.load_extension("cogs.verification")
+        await self.load_extension("cogs.admin")
+        await self.load_extension("cogs.legal")
+        log.info("Cogs loaded")
+
+        # Sync slash commands
+        await self.tree.sync()
+        log.info("Commands synced")
 
         # Register persistent views
         from cogs.verification import VerifyButton
         self.add_view(VerifyButton())
 
-        # Load cogs
-        for cog in ("cogs.verification", "cogs.legal", "cogs.admin"):
-            await self.load_extension(cog)
-            log.info("Loaded cog: %s", cog)
-
         # Start background tasks
-        self._cleanup_task.start()
+        self.purge_loop.start()
 
-        # Start web dashboard
+        # Start web dashboard in a daemon thread
         self._start_web_dashboard()
 
-        # Sync slash commands
-        await self.tree.sync()
-        log.info("Slash commands synced")
-
     async def on_ready(self) -> None:
-        log.info("AgeGate bot ready as %s (ID: %s)", self.user, self.user.id)
-        log.info("Connected to %d guild(s)", len(self.guilds))
+        log.info(f"Logged in as {self.user} ({self.user.id})")
+        log.info(f"Connected to {len(self.guilds)} guild(s)")
 
         # Auto-register all guilds
         for guild in self.guilds:
-            await self.database.register_guild(
-                guild.id, guild.name, guild.owner_id
-            )
+            await self.database.register_guild(guild.id, guild.name, guild.owner_id)
         log.info("All guilds registered")
 
-    async def on_guild_join(self, guild: discord.Guild) -> None:
-        """Auto-register new guilds."""
-        await self.database.register_guild(
-            guild.id, guild.name, guild.owner_id
+        # Set presence
+        await self.change_presence(
+            activity=discord.Activity(
+                type=discord.ActivityType.watching,
+                name="age verification",
+            )
         )
-        log.info("Joined and registered guild: %s (%d)", guild.name, guild.id)
 
-    async def close(self) -> None:
-        """Graceful shutdown."""
-        self._cleanup_task.cancel()
-        await self.database.close()
-        log.info("Database closed")
-        await super().close()
-
-    # ── Background Tasks ───────────────────────────────────────
+    async def on_guild_join(self, guild: discord.Guild) -> None:
+        await self.database.register_guild(guild.id, guild.name, guild.owner_id)
+        await self.database.audit("GUILD_JOINED", guild_id=guild.id, details=guild.name)
+        log.info(f"Joined guild: {guild.name} ({guild.id})")
 
     @tasks.loop(minutes=30)
-    async def _cleanup_task(self) -> None:
-        """Purge expired temporary verification records."""
-        deleted = self.storage_manager.cleanup_expired()
-        if deleted > 0:
-            log.info("Cleanup: deleted %d expired temp records", deleted)
+    async def purge_loop(self) -> None:
+        count = self.storage_manager.purge_expired()
+        if count > 0:
+            log.info(f"Purged {count} expired temp records")
 
-    @_cleanup_task.before_loop
-    async def _before_cleanup(self) -> None:
+    @purge_loop.before_loop
+    async def before_purge_loop(self) -> None:
         await self.wait_until_ready()
 
-    # ── Web Dashboard ──────────────────────────────────────────
-
     def _start_web_dashboard(self) -> None:
-        """Start FastAPI dashboard in a daemon thread."""
-        try:
-            import uvicorn
-            from web.app import create_app
+        web_app = create_app(
+            self.database,
+            secret_key=self.app_config.web_secret,
+            master_api_key=self.app_config.api_master_key,
+        )
 
-            config = self.app_config
-            web_app = create_app(
-                database=self.database,
-                secret_key=config.web_secret or "agegate-fallback-secret",
-                master_api_key=config.api_master_key,
+        def run() -> None:
+            uvicorn.run(
+                web_app,
+                host=self.app_config.web_host,
+                port=self.app_config.web_port,
+                log_level="warning",
             )
 
-            thread = threading.Thread(
-                target=uvicorn.run,
-                args=(web_app,),
-                kwargs={
-                    "host": config.web_host,
-                    "port": config.web_port,
-                    "log_level": "warning",
-                },
-                daemon=True,
-                name="agegate-web",
-            )
-            thread.start()
-            log.info(
-                "Web dashboard started at http://%s:%d",
-                config.web_host,
-                config.web_port,
-            )
-        except Exception as e:
-            log.error("Failed to start web dashboard: %s", e)
+        thread = threading.Thread(target=run, daemon=True, name="agegate-web")
+        thread.start()
+        log.info(f"Web dashboard running on {self.app_config.web_base_url}")
 
 
 def main() -> None:
-    """Application entry point."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+    config = Config.from_env()
+    bot = AgeGateBot(config)
 
     try:
-        config = Config.from_env()
-    except ValueError as e:
-        log.error("Configuration error: %s", e)
-        sys.exit(1)
-
-    bot = AgeGateBot(config)
-    bot.run(config.discord_token, log_handler=None)
+        bot.run(config.discord_token, log_handler=None, reconnect=True)
+    except KeyboardInterrupt:
+        log.info("Shutting down…")
 
 
 if __name__ == "__main__":

@@ -38,8 +38,14 @@ class AdminCog(commands.Cog, name="Admin"):
             api_key = await self.bot.database.register_guild(
                 guild.id, guild.name, guild.owner_id
             )
+            if not api_key:
+                await interaction.response.send_message(
+                    "❌ Could not generate API key.", ephemeral=True
+                )
+                return
         else:
-            api_key = settings["api_key"]
+            # Key is hashed — generate a new one so user can see it
+            api_key = await self.bot.database.regenerate_api_key(guild.id)
 
         config = self.bot.app_config
         embed = discord.Embed(
@@ -49,7 +55,8 @@ class AdminCog(commands.Cog, name="Admin"):
                 f"Use this key to log in to the web dashboard at "
                 f"**{config.web_base_url}**\n\n"
                 "⚠️ Keep this key secret! Anyone with it can access "
-                "your server's verification data."
+                "your server's verification data.\n"
+                "⚠️ This key is shown once — save it now."
             ),
             color=0x5865F2,
         )
@@ -260,7 +267,7 @@ class AdminCog(commands.Cog, name="Admin"):
     )
     @app_commands.checks.has_permissions(administrator=True)
     async def force_purge(self, interaction: discord.Interaction) -> None:
-        deleted = self.bot.storage_manager.cleanup_expired()
+        deleted = self.bot.storage_manager.purge_expired()
 
         await self.bot.database.add_audit_entry(
             "FORCE_PURGE",

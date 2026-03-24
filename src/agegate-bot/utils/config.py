@@ -1,18 +1,16 @@
-"""Dataclass-based environment configuration with validation."""
+"""Dataclass-based configuration loaded from environment variables."""
 
 from __future__ import annotations
 
 import os
+import secrets
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from dotenv import load_dotenv
 
 
 @dataclass(frozen=True)
 class Config:
-    """Immutable application configuration loaded from environment variables."""
-
     # Required
     discord_token: str
 
@@ -44,27 +42,34 @@ class Config:
     org_name: str = "AgeGate Verification Services"
     legal_contact_email: str = "legal@example.com"
 
-    # Paths
-    data_dir: Path = field(default_factory=lambda: Path("data"))
-
     @classmethod
-    def from_env(cls, env_path: str | None = None) -> Config:
-        """Load configuration from environment variables.
+    def from_env(cls) -> Config:
+        load_dotenv()
 
-        Args:
-            env_path: Optional path to .env file. Defaults to .env in cwd.
-
-        Returns:
-            Validated Config instance.
-
-        Raises:
-            ValueError: If DISCORD_TOKEN is missing.
-        """
-        load_dotenv(env_path or ".env")
-
-        token = os.getenv("DISCORD_TOKEN", "").strip()
+        token = os.getenv("DISCORD_TOKEN", "")
         if not token:
-            raise ValueError("DISCORD_TOKEN environment variable is required")
+            raise RuntimeError("DISCORD_TOKEN is required — set it in .env")
+
+        enc_key = os.getenv("ENCRYPTION_KEY", "").strip()
+        # Always validate the key — generate a fresh one if missing or invalid
+        from cryptography.fernet import Fernet
+
+        try:
+            if enc_key:
+                Fernet(enc_key.encode() if isinstance(enc_key, str) else enc_key)
+            else:
+                raise ValueError("empty")
+        except (ValueError, Exception):
+            enc_key = Fernet.generate_key().decode()
+            print(
+                "[config] WARNING: ENCRYPTION_KEY missing or invalid — generated ephemeral key. "
+                "Temp records will be lost on restart."
+            )
+
+        web_secret = os.getenv("WEB_SECRET", "")
+        if not web_secret:
+            web_secret = secrets.token_hex(32)
+            print("[config] WARNING: No WEB_SECRET set — generated ephemeral session key.")
 
         return cls(
             discord_token=token,
@@ -73,7 +78,7 @@ class Config:
             verify_channel=os.getenv("VERIFY_CHANNEL", "age-verification"),
             log_channel=os.getenv("LOG_CHANNEL", "verification-logs"),
             min_age=int(os.getenv("MIN_AGE", "18")),
-            encryption_key=os.getenv("ENCRYPTION_KEY", ""),
+            encryption_key=enc_key,
             retention_hours=int(os.getenv("RETENTION_HOURS", "24")),
             tamper_threshold=float(os.getenv("TAMPER_THRESHOLD", "0.60")),
             ocr_confidence=float(os.getenv("OCR_CONFIDENCE", "0.35")),
@@ -81,12 +86,9 @@ class Config:
             cooldown_minutes=int(os.getenv("COOLDOWN_MINUTES", "10")),
             web_host=os.getenv("WEB_HOST", "0.0.0.0"),
             web_port=int(os.getenv("WEB_PORT", "8080")),
-            web_secret=os.getenv("WEB_SECRET", ""),
+            web_secret=web_secret,
             web_base_url=os.getenv("WEB_BASE_URL", "http://localhost:8080"),
             api_master_key=os.getenv("API_MASTER_KEY", ""),
             org_name=os.getenv("ORG_NAME", "AgeGate Verification Services"),
-            legal_contact_email=os.getenv(
-                "LEGAL_CONTACT_EMAIL", "legal@example.com"
-            ),
-            data_dir=Path(os.getenv("DATA_DIR", "data")),
+            legal_contact_email=os.getenv("LEGAL_CONTACT_EMAIL", "legal@example.com"),
         )

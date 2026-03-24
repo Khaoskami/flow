@@ -39,8 +39,7 @@ class VerifyButton(discord.ui.View):
             return
 
         # Check if user already has the verified role
-        config = bot.app_config
-        role = discord.utils.get(guild.roles, name=config.verified_role)
+        role = discord.utils.get(guild.roles, name=bot.app_config.verified_role)
         if role and isinstance(user, discord.Member) and role in user.roles:
             await interaction.response.send_message(
                 "✅ You are already verified on this server!", ephemeral=True
@@ -48,6 +47,7 @@ class VerifyButton(discord.ui.View):
             return
 
         # Rate limit check
+        config = bot.app_config
         attempts = await bot.database.get_attempt_count(user.id)
         if attempts >= config.max_attempts:
             await interaction.response.send_message(
@@ -372,7 +372,7 @@ async def _start_dm_verification(
     )
 
     # Store temp record
-    bot.storage_manager.store(vid, {
+    bot.storage_manager.save(vid, {
         "verification_id": vid,
         "user_id": user.id,
         "tamper_score": analysis.tamper_score,

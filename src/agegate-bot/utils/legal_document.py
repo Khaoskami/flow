@@ -1,4 +1,4 @@
-"""Legal agreement generator with SHA-256 hashing and versioning."""
+"""Legal consent agreement generator with SHA-256 integrity hashing."""
 
 from __future__ import annotations
 
@@ -16,241 +16,178 @@ def generate_agreement(
     org_name: str = "AgeGate Verification Services",
     contact_email: str = "legal@example.com",
 ) -> str:
-    """Generate a personalized 8-section legal consent agreement.
+    """Generate a legal consent document. Returns document text."""
 
-    Returns:
-        Full document text ready for signing.
-    """
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
-    return f"""ELECTRONIC CONSENT AGREEMENT
-Age Verification & Data Processing Authorization
-Document Version: {DOCUMENT_VERSION}
-Generated: {timestamp}
+    document = f"""══════════════════════════════════════════════════
+ELECTRONIC CONSENT & AGE VERIFICATION AGREEMENT
+Version {DOCUMENT_VERSION}
+══════════════════════════════════════════════════
 
-{'=' * 60}
+Generated: {now}
 
 SECTION 1 — PARTIES
 
-This Agreement is entered into between:
+This agreement ("Agreement") is entered into between:
 
-a) THE USER: {user_name} (Discord ID: {user_id}), hereinafter referred to \
-as "the User";
+  USER:
+    Display Name: {user_name}
+    Discord User ID: {user_id}
 
-b) THE SERVER: {guild_name} (Guild ID: {guild_id}), hereinafter referred to \
-as "the Server";
+  SERVER:
+    Server Name: {guild_name}
+    Discord Guild ID: {guild_id}
 
-c) THE SERVICE PROVIDER: {org_name}, hereinafter referred to as \
-"the Service", operating the AgeGate verification system.
-
-{'=' * 60}
+  SERVICE PROVIDER:
+    Organization: {org_name}
+    Contact: {contact_email}
 
 SECTION 2 — DECLARATION OF AGE
 
-The User hereby declares and affirms that:
+By signing this Agreement, the User hereby declares and affirms that:
 
-(i) They are eighteen (18) years of age or older at the time of this \
-verification;
-(ii) They possess full legal capacity to enter into this agreement;
-(iii) The identification document submitted is genuine, unaltered, and \
-belongs to the User;
-(iv) All information provided during the verification process is truthful \
-and accurate to the best of their knowledge.
-
-{'=' * 60}
+  (a) They are at least eighteen (18) years of age;
+  (b) They possess full legal capacity to enter into this Agreement;
+  (c) The identification document provided during verification is genuine,
+      unaltered, and belongs to the User;
+  (d) All information provided during the verification process is truthful
+      and accurate to the best of their knowledge.
 
 SECTION 3 — CONSENT TO VERIFICATION
 
 The User consents to the following verification processes:
 
-(a) Automated image analysis of the submitted identification document, \
-including but not limited to: resolution validation, metadata analysis, \
-error level analysis, edge coherence analysis, noise consistency analysis, \
-skin/hand presence detection, and optical character recognition (OCR);
-
-(b) Extraction of date of birth and age calculation from the submitted \
-document via OCR;
-
-(c) Temporary encrypted storage of analysis results (NOT the original \
-image) for a period of twenty-four (24) hours, after which records are \
-automatically and permanently deleted;
-
-(d) Permanent storage of this consent agreement and verification status \
-(without personally identifiable information from the identification \
-document) in the Service's database;
-
-(e) Sharing of verification status (verified/not verified) across all \
-Discord servers utilizing the AgeGate system for the purpose of cross-server \
-recognition, eliminating the need for repeated verification.
-
-{'=' * 60}
+  (a) Automated image analysis of the submitted identification document,
+      including but not limited to: resolution validation, metadata
+      analysis, error level analysis, edge coherence analysis, noise
+      consistency analysis, skin/hand presence detection, optical
+      character recognition (OCR), and document type classification;
+  (b) Extraction of date of birth information via OCR for age calculation;
+  (c) Temporary encrypted storage of analysis results (metadata and scores
+      only — no raw images) for a period not exceeding twenty-four (24)
+      hours, after which records are automatically and irrevocably deleted;
+  (d) Permanent storage of this signed consent agreement and verification
+      status (pass/fail, age detected, confidence scores) in the Service
+      Provider's database;
+  (e) Sharing of verification status (verified/not verified) across all
+      Discord servers utilizing the Service Provider's verification system.
 
 SECTION 4 — DATA HANDLING & PRIVACY
 
-The Service commits to the following data handling practices:
+The Service Provider commits to the following data handling practices:
 
-(a) NO human review of submitted identification images shall occur; all \
-processing is fully automated;
-
-(b) NO raw images or photographs of identification documents are stored at \
-any point; images exist only in memory during analysis and are immediately \
-discarded;
-
-(c) Temporary analysis records are encrypted using AES-128-CBC (Fernet) \
-encryption and are automatically purged after 24 hours;
-
-(d) Permanent records contain only: verification status, consent agreement \
-text, document hash, signing timestamp, and cross-server membership data; \
-NO personally identifiable information from the identification document is \
-permanently retained;
-
-(e) The User retains the right to request complete deletion of all their \
-data at any time by contacting a server administrator or the Service at \
-{contact_email}.
-
-{'=' * 60}
+  (a) NO human review of submitted identification images shall occur under
+      normal operating conditions;
+  (b) NO raw identification images are stored at any time — images exist
+      only in volatile memory during the analysis process and are
+      explicitly destroyed immediately upon completion;
+  (c) Temporary analysis records are encrypted using AES-128-CBC (Fernet)
+      encryption and are automatically purged after the retention period;
+  (d) Permanent records contain NO personally identifiable information
+      extracted from the identification document itself — only the
+      verification outcome, confidence scores, and this Agreement;
+  (e) The User may request complete deletion of all their data at any time
+      by contacting a server administrator who may invoke the data purge
+      command, or by contacting the Service Provider at {contact_email}.
 
 SECTION 5 — CROSS-SERVER RECOGNITION
 
-(a) Upon successful verification and signing of this agreement, the User's \
-verified status shall be recognized across all Discord servers utilizing the \
-AgeGate system;
-
-(b) The User shall not be required to undergo re-verification when joining \
-new servers that use the AgeGate system;
-
-(c) Cross-server recognition may be revoked at any time by the User or by \
-an administrator of any participating server;
-
-(d) Revocation of verification on one server does not automatically affect \
-the User's status on other servers unless a global revocation is performed.
-
-{'=' * 60}
+  (a) Upon successful verification and signing of this Agreement, the
+      User's verified status shall be recognized across all Discord servers
+      utilizing the Service Provider's verification system;
+  (b) The User shall not be required to re-verify their identity when
+      joining additional servers using this system;
+  (c) Cross-server recognition may be revoked by any server administrator
+      or by the User's own request;
+  (d) Revocation in one server does not automatically revoke verification
+      in other servers unless a global purge is performed.
 
 SECTION 6 — LIMITATION OF LIABILITY
 
-(a) The AgeGate verification system operates on a best-effort basis using \
-heuristic image analysis and OCR technology; it does NOT constitute a \
-KYC-grade (Know Your Customer) identity verification service;
-
-(b) The Service makes no warranty, express or implied, regarding the \
-accuracy, completeness, or reliability of the automated analysis;
-
-(c) The User acknowledges that the system may produce false positives or \
-false negatives and agrees to hold the Service harmless from any claims \
-arising from verification results;
-
-(d) The User indemnifies the Service, the Server, and their respective \
-operators against any claims, damages, or liabilities arising from \
-fraudulent or misleading submissions.
-
-{'=' * 60}
+  (a) The verification system employs heuristic analysis techniques and is
+      provided on a "best effort" basis. It does not constitute a KYC
+      (Know Your Customer) compliant identity verification system;
+  (b) The Service Provider makes no warranty, express or implied, regarding
+      the accuracy or completeness of the verification process;
+  (c) The User agrees to indemnify and hold harmless the Service Provider,
+      server administrators, and Discord Inc. from any claims, damages, or
+      liabilities arising from the use of this verification system;
+  (d) This system is intended as a reasonable-effort age gate and should
+      not be relied upon as the sole mechanism for legal compliance in
+      jurisdictions requiring formal identity verification.
 
 SECTION 7 — PENALTIES FOR MISREPRESENTATION
 
-The User acknowledges that providing false information, submitting forged \
-or altered identification documents, or otherwise misrepresenting their \
+The User acknowledges that providing false information, submitting forged
+or altered identification documents, or otherwise misrepresenting their
 age or identity may result in:
 
-(a) Immediate and permanent ban from the Server and all participating \
-servers;
-
-(b) Report to Discord Trust & Safety for violation of Discord's Terms of \
-Service;
-
-(c) Potential referral to relevant law enforcement authorities where \
-applicable under local jurisdiction;
-
-(d) Revocation of all verification records and cross-server recognition \
-status.
-
-{'=' * 60}
+  (a) Immediate and permanent ban from all servers utilizing this system;
+  (b) Reporting to Discord's Trust & Safety team;
+  (c) Referral to appropriate law enforcement authorities where the
+      misrepresentation involves potential harm to minors or constitutes
+      a criminal offense under applicable law.
 
 SECTION 8 — ELECTRONIC SIGNATURE
 
-By clicking "I Agree — Sign Document" and subsequently confirming with \
-"Yes, I'm Sure — Sign Now", the User:
+By clicking "I Agree — Sign Document" and confirming, the User:
 
-(a) Acknowledges that they have read, understood, and agree to all terms \
-and conditions set forth in this agreement;
+  (a) Acknowledges having read and understood all sections of this Agreement;
+  (b) Agrees to be bound by all terms and conditions herein;
+  (c) Understands that this constitutes a legally binding electronic
+      signature under applicable electronic signature laws (including but
+      not limited to the U.S. ESIGN Act, EU eIDAS Regulation, and
+      comparable legislation in other jurisdictions);
+  (d) Confirms that this Agreement is entered into freely, voluntarily,
+      and without coercion.
 
-(b) Acknowledges that this electronic signature constitutes a legally \
-binding agreement under applicable electronic signature laws, including \
-but not limited to the U.S. ESIGN Act and the EU eIDAS Regulation;
-
-(c) Understands that this agreement is permanent and will be stored \
-indefinitely as a record of consent;
-
-(d) Confirms that they are entering into this agreement voluntarily and \
-without coercion.
-
-{'=' * 60}
-END OF DOCUMENT
-Parties: {user_name} ({user_id}) | {guild_name} ({guild_id}) | {org_name}
+══════════════════════════════════════════════════
 Document Version: {DOCUMENT_VERSION}
-Generated: {timestamp}
-"""
+Generated By: {org_name}
+══════════════════════════════════════════════════"""
+
+    return document
 
 
-def hash_document(document_text: str) -> str:
-    """Compute SHA-256 hash of a legal document."""
-    return hashlib.sha256(document_text.encode("utf-8")).hexdigest()
-
-
-def split_for_embeds(text: str, max_length: int = 3900) -> list[str]:
-    """Split document text into pages that fit Discord's embed limit.
-
-    Splits at paragraph boundaries (double newlines) when possible,
-    falling back to line boundaries.
-
-    Args:
-        text: Full document text.
-        max_length: Maximum characters per page (leave room for formatting).
-
-    Returns:
-        List of text pages.
-    """
-    pages: list[str] = []
-    current = ""
-
-    paragraphs = text.split("\n\n")
-    for para in paragraphs:
-        candidate = f"{current}\n\n{para}" if current else para
-        if len(candidate) <= max_length:
-            current = candidate
-        else:
-            if current:
-                pages.append(current.strip())
-            if len(para) <= max_length:
-                current = para
-            else:
-                lines = para.split("\n")
-                current = ""
-                for line in lines:
-                    candidate = f"{current}\n{line}" if current else line
-                    if len(candidate) <= max_length:
-                        current = candidate
-                    else:
-                        if current:
-                            pages.append(current.strip())
-                        current = line
-
-    if current.strip():
-        pages.append(current.strip())
-
-    return pages if pages else [text[:max_length]]
+def hash_document(text: str) -> str:
+    """Compute SHA-256 hash of document text."""
+    return hashlib.sha256(text.encode()).hexdigest()
 
 
 def generate_summary() -> str:
-    """Generate a condensed 6-point summary for the initial embed."""
+    """Generate a brief summary of the consent agreement sections."""
     return (
-        "**1. Age Declaration** — You affirm you are 18+ with legal capacity\n"
-        "**2. Consent to Processing** — Automated image analysis, OCR, "
-        "encrypted temp storage\n"
-        "**3. Privacy** — No human review, no raw image storage, "
-        "24h temp record auto-delete\n"
-        "**4. Cross-Server** — Verified status recognized on all AgeGate servers\n"
-        "**5. Liability** — Best-effort heuristic system, not KYC-grade\n"
-        "**6. Misrepresentation** — May result in permanent ban + "
-        "Trust & Safety report"
+        "**This agreement covers:**\n"
+        "1. **Parties** — Your identity and the server\n"
+        "2. **Age Declaration** — Confirming you are 18+\n"
+        "3. **Consent to Verification** — What analysis is performed\n"
+        "4. **Data Handling & Privacy** — How your data is protected\n"
+        "5. **Cross-Server Recognition** — Verify once, recognized everywhere\n"
+        "6. **Limitation of Liability** — Service provided as-is\n"
+        "7. **Penalties for Misrepresentation** — Consequences of fraud\n"
+        "8. **Electronic Signature** — Legally binding consent\n\n"
+        "📖 Please read all sections before signing."
     )
+
+
+def split_for_embeds(text: str, max_length: int = 1800) -> list[str]:
+    """Split document text into pages suitable for Discord embeds."""
+    sections = text.split("\nSECTION ")
+    pages: list[str] = []
+    current_page = ""
+
+    for i, section in enumerate(sections):
+        chunk = section if i == 0 else f"SECTION {section}"
+
+        if len(current_page) + len(chunk) + 1 > max_length:
+            if current_page:
+                pages.append(current_page.strip())
+            current_page = chunk
+        else:
+            current_page += "\n" + chunk if current_page else chunk
+
+    if current_page.strip():
+        pages.append(current_page.strip())
+
+    return pages if pages else [text[:max_length]]
